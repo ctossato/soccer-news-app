@@ -1,5 +1,7 @@
 package me.dio.soccernews.ui.news;
 
+import android.os.AsyncTask;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -8,6 +10,8 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.dio.soccernews.data.ApiState;
+import me.dio.soccernews.data.SoccerNewsRepository;
 import me.dio.soccernews.data.remote.SoccerNewsApi;
 import me.dio.soccernews.domain.News;
 import retrofit2.Call;
@@ -20,42 +24,44 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class NewsViewModel extends ViewModel {
 
     private final MutableLiveData<List<News>> news = new MutableLiveData<>();
-
-    private final SoccerNewsApi api;
+    private final MutableLiveData<ApiState> state = new MutableLiveData<>();
 
     public NewsViewModel() {
-
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://digitalinnovationone.github.io/soccer-news-api/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-
-        api = retrofit.create(SoccerNewsApi.class);
-
-        this.findNews();
-
+                this.findNews();
     }
 
-    private void findNews() {
-        api.getNews().enqueue(new Callback<List<News>>(){
-
+    public void findNews() {
+        state.setValue(ApiState.DOING);
+        SoccerNewsRepository.getInstance().getRemoteApi().getNews().
+                enqueue(new Callback<List<News>>(){
             @Override
             public void onResponse(Call<List<News>> call, Response<List<News>> response) {
                 if (response.isSuccessful()){
                     news.setValue(response.body());
+                    state.setValue(ApiState.DONE);
                 } else {
-                    // TODO Pensar em estrategia de tratamento de erros
+                    state.setValue(ApiState.ERROR);
                 }
             }
-
             @Override
             public void onFailure(Call<List<News>> call, Throwable t) {
-                // TODO Pensar em estrategia de tratamento de erros
+                state.setValue(ApiState.ERROR);
             }
         });
     }
 
+    public void saveNews(News news) {
+        AsyncTask.execute(() -> SoccerNewsRepository.getInstance().getLocalDb().newsDao().save(news));
+    }
+    public List<News> getFavoriteNews() {
+        return SoccerNewsRepository.getInstance().getLocalDb().newsDao().loadFavoriteNews_non();
+    }
+
     public LiveData<List<News>> getNews() {
         return this.news;
+    }
+
+    public MutableLiveData<ApiState> getState() {
+        return state;
     }
 }

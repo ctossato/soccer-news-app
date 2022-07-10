@@ -1,4 +1,4 @@
-package me.dio.soccernews;
+package me.dio.soccernews.ui;
 
 import android.os.Bundle;
 
@@ -7,7 +7,10 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
+import androidx.room.Room;
 
+import me.dio.soccernews.R;
+import me.dio.soccernews.data.local.SoccerNewsDatabase;
 import me.dio.soccernews.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
